@@ -115,13 +115,13 @@ public class RobotDrv
      * This convention should NOT be changed.  Any new drive system should be configured to react accordingly.
      */
     public void moveRobot() {
-        // calculate required motor speeds to acheive axis motions
+        // calculate required motor speeds to achieve axis motions
         //double back = driveYaw + driveLateral;
         //double left = driveYaw - driveAxial - (driveLateral * 0.5);
         //double right = driveYaw + driveAxial - (driveLateral * 0.5);
 
-        double left = -(driveAxial - driveLateral);
-        double right = driveAxial + driveLateral;
+        double left = (driveYaw - driveAxial - driveLateral*0.5);
+        double right = (driveYaw + driveAxial - driveLateral * 0.5);
 
         // normalize all motor speeds so no values exceeds 100%.
         double max = Math.max(Math.abs(left), Math.abs(right));

@@ -19,38 +19,43 @@ public class TeleOp1 extends LinearOpMode {
     private Servo servo;
     private DcMotor collector;
     private DcMotor lifter;
+    private DcMotor lifter2;
+
+
+    //joystick-power mapping     https://www.desmos.com/calculator/r9ty28o3la
+    final double b = 4;   //controls magnitude of the curve for joystick-power mapping
+    final double a = Math.atan(b);   //constant for joystick-power mapping
 
 
 
     public void movement()
     {
-        double forwardPower = this.gamepad1.right_stick_y;
-        double steeringPower = this.gamepad1.left_stick_x;
+        double forwardPower = this.gamepad1.right_stick_y * 0.75;
+        double steeringPower = this.gamepad1.left_stick_x / 2;
         left.setPower(-(forwardPower-steeringPower));
-        right.setPower(forwardPower+steeringPower);
+        right.setPower((forwardPower+steeringPower));  //0.79
     }
 
 
     public void collect()
     {
-        collector.setPower(0.75);
+        if(gamepad2.left_bumper) {
+            collector.setPower(0.75);
+        } else if(gamepad2.right_bumper) {
+            collector.setPower(-0.75);
+        } else {
+            collector.setPower(0);
+        }
     }
 
     public void lifting()
     {
-        for(int i = 0; i < 7; i++)
-        {
-            lifter.setPower(0.5);
-            try
-            {
-                Thread.sleep(1000);
-            }
-            catch(InterruptedException ex)
-            {
-                Thread.currentThread().interrupt();
-            }
-        }
-        lifter.setPower(0);
+        lifter.setPower(gamepad2.left_stick_y/2);
+        //lifter2.setPower(gamepad2.right_stick_y);
+
+        //lifter2.setPower(Math.pow(gamepad2.right_stick_y, 3));
+
+        lifter2.setPower(-Math.tan(gamepad2.right_stick_y*a)/b);
     }
 
     public void resetlift()
@@ -67,6 +72,8 @@ public class TeleOp1 extends LinearOpMode {
         left = hardwareMap.get(DcMotor.class, "left");
         right = hardwareMap.get(DcMotor.class, "right");
         collector = hardwareMap.get(DcMotor.class, "collector");
+        lifter = hardwareMap.get(DcMotor.class, "lift1");
+        lifter2 = hardwareMap.get(DcMotor.class, "lift2");
 
 
         waitForStart();
@@ -80,12 +87,9 @@ public class TeleOp1 extends LinearOpMode {
             right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             collector.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             movement();
+            lifting();
             collect();
 
-            //if(gamepad1.x)
-            //{
-            //    lifting();
-            //}
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
         }

@@ -111,16 +111,6 @@ public class RobotNav
         }
     }
 
-    /***
-     * Start tracking Vuforia images
-     */
-    public void activateTracking() {
-
-        // Start tracking any of the defined targets
-        if (targetsRoverRuckus != null)
-            targetsRoverRuckus.activate();
-    }
-
 
     /***
      * use target position to determine the best way to approach it.
@@ -155,10 +145,91 @@ public class RobotNav
 
 
     /***
+     * Determine if specified target ID is visible and
+     * If it is, retreive the relevant data, and then calculate the Robot and Target locations
+     *
+     * @param   targetId
+     * @return  true if the specified target is found
+     */
+    public boolean targetIsVisible(int targetId) {
+
+        VuforiaTrackable target = targetsRoverRuckus.get(targetId);
+        VuforiaTrackableDefaultListener listener = (VuforiaTrackableDefaultListener)target.getListener();
+        OpenGLMatrix location  = null;
+
+        // if we have a target, look for an updated robot position
+        if ((target != null) && (listener != null) && listener.isVisible()) {
+            targetFound = true;
+            targetName = target.getName();
+
+            // If we have an updated robot location, update all the relevant tracking information
+            location  = listener.getUpdatedRobotLocation();
+            if (location != null) {
+
+                // Create a translation and rotation vector for the robot.
+                VectorF trans = location.getTranslation();
+                Orientation rot = Orientation.getOrientation(location, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
+
+                // Robot position is defined by the standard Matrix translation (x and y)
+                robotX = trans.get(0);
+                robotY = trans.get(1);
+
+                // Robot bearing (in +vc CCW cartesian system) is defined by the standard Matrix z rotation
+                robotBearing = rot.thirdAngle;
+
+                // target range is based on distance from robot position to origin.
+                targetRange = Math.hypot(robotX, robotY);
+
+                // target bearing is based on angle formed between the X axis to the target range line
+                targetBearing = Math.toDegrees(-Math.asin(robotY / targetRange));
+
+                // Target relative bearing is the target Heading relative to the direction the robot is pointing.
+                relativeBearing = targetBearing - robotBearing;
+            }
+            targetFound = true;
+        }
+        else  {
+            // Indicate that there is no target visible
+            targetFound = false;
+            targetName = "None";
+        }
+
+        return targetFound;
+    }
+
+    /***
+     * Start tracking Vuforia images
+     */
+    public void activateTracking() {
+
+        // Start tracking any of the defined targets
+        if (targetsRoverRuckus != null)
+            targetsRoverRuckus.activate();
+    }
+
+    /***
+     * See if any of the vision targets are in sight.
+     *
+     * @return true if any target is found
+     */
+    public boolean targetsAreVisible()  {
+
+        int targetTestID = 0;
+
+        // Check each target in turn, but stop looking when the first target is found.
+        while ((targetTestID < MAX_TARGETS) && !targetIsVisible(targetTestID)) {
+            targetTestID++ ;
+        }
+
+        return (targetFound);
+    }
+
+    /***
      * Initialize the Target Tracking and navigation interface
      * @param opMode    pointer to OpMode
      * @param robot     pointer to Robot hardware class
      */
+
     public void initVuforia(LinearOpMode opMode, RobotDrv robot) {
 
         // Save reference to OpMode and Hardware map
@@ -316,76 +387,5 @@ public class RobotNav
         {
             ((VuforiaTrackableDefaultListener)trackable.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
         }
-    }
-
-
-    /***
-     * See if any of the vision targets are in sight.
-     *
-     * @return true if any target is found
-     */
-    public boolean targetsAreVisible()  {
-
-        int targetTestID = 0;
-
-        // Check each target in turn, but stop looking when the first target is found.
-        while ((targetTestID < MAX_TARGETS) && !targetIsVisible(targetTestID)) {
-            targetTestID++ ;
-        }
-
-        return (targetFound);
-    }
-
-    /***
-     * Determine if specified target ID is visible and
-     * If it is, retreive the relevant data, and then calculate the Robot and Target locations
-     *
-     * @param   targetId
-     * @return  true if the specified target is found
-     */
-    public boolean targetIsVisible(int targetId) {
-
-        VuforiaTrackable target = targetsRoverRuckus.get(targetId);
-        VuforiaTrackableDefaultListener listener = (VuforiaTrackableDefaultListener)target.getListener();
-        OpenGLMatrix location  = null;
-
-        // if we have a target, look for an updated robot position
-        if ((target != null) && (listener != null) && listener.isVisible()) {
-            targetFound = true;
-            targetName = target.getName();
-
-            // If we have an updated robot location, update all the relevant tracking information
-            location  = listener.getUpdatedRobotLocation();
-            if (location != null) {
-
-                // Create a translation and rotation vector for the robot.
-                VectorF trans = location.getTranslation();
-                Orientation rot = Orientation.getOrientation(location, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
-
-                // Robot position is defined by the standard Matrix translation (x and y)
-                robotX = trans.get(0);
-                robotY = trans.get(1);
-
-                // Robot bearing (in +vc CCW cartesian system) is defined by the standard Matrix z rotation
-                robotBearing = rot.thirdAngle;
-
-                // target range is based on distance from robot position to origin.
-                targetRange = Math.hypot(robotX, robotY);
-
-                // target bearing is based on angle formed between the X axis to the target range line
-                targetBearing = Math.toDegrees(-Math.asin(robotY / targetRange));
-
-                // Target relative bearing is the target Heading relative to the direction the robot is pointing.
-                relativeBearing = targetBearing - robotBearing;
-            }
-            targetFound = true;
-        }
-        else  {
-            // Indicate that there is no target visible
-            targetFound = false;
-            targetName = "None";
-        }
-
-        return targetFound;
     }
 }
