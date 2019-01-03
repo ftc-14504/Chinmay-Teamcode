@@ -8,7 +8,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
-import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
@@ -37,8 +36,8 @@ public class AutonomousNavTFod extends LinearOpMode {
     private Servo marker;
     private ElapsedTime runtime = new ElapsedTime();
     static final double COUNTS_PER_MOTOR_REV = 2240;    // eg: TETRIX Motor Encoder
-    static final double DRIVE_GEAR_REDUCTION = 3.0/4.0;     // This is < 1.0 if geared UP
-    static final double WHEEL_DIAMETER_INCHES = 100/25.4;     // For figuring circumference
+    static final double DRIVE_GEAR_REDUCTION = 3.0 / 4.0;     // This is < 1.0 if geared UP
+    static final double WHEEL_DIAMETER_INCHES = 100 / 25.4;     // For figuring circumference
     static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double DRIVE_SPEED = 0.5;
@@ -59,7 +58,6 @@ public class AutonomousNavTFod extends LinearOpMode {
     List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
 
 
-
     private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
 
     private OpenGLMatrix lastLocation = null;
@@ -67,9 +65,9 @@ public class AutonomousNavTFod extends LinearOpMode {
 
     RobotNav rnav;
 
-    public void encoderDrive ( double speed,
-                               double leftInches, double rightInches,
-                               double timeoutS){
+    public void encoderDrive(double speed,
+                             double leftInches, double rightInches,
+                             double timeoutS) {
         int newLeftTarget, newLeft2Target;
         int newRightTarget, newRight2Target;
 
@@ -100,7 +98,7 @@ public class AutonomousNavTFod extends LinearOpMode {
             right2.setPower(Math.abs(speed));
             while (opModeIsActive() &&
                     (runtime.seconds() < timeoutS) &&
-                    (left.isBusy()  && left2.isBusy() && right.isBusy() && right2.isBusy())) {
+                    (left.isBusy() && left2.isBusy() && right.isBusy() && right2.isBusy())) {
 
                 // Display it for the driver.
                 telemetry.addData("Path1", "Running to %7d :%7d", newLeftTarget, newRightTarget);
@@ -142,11 +140,11 @@ public class AutonomousNavTFod extends LinearOpMode {
     }
 
     public void turnDegrees(double angle) {
-        encoderDrive(TURN_SPEED, (Math.PI/30.0)*angle, (-Math.PI/30.0)*angle, 5.0);
+        encoderDrive(TURN_SPEED, (Math.PI / 30.0) * angle, (-Math.PI / 30.0) * angle, 5.0);
     }
 
     public void depositMarker() {
-        while(marker.getPosition() < 0.6) {
+        while (marker.getPosition() < 0.6) {
             marker.setPosition(marker.getPosition() + 0.001);
         }
         sleep(300);
@@ -222,7 +220,7 @@ public class AutonomousNavTFod extends LinearOpMode {
 
     }
 
-    public VuforiaTrackables setUpVuforia(List<VuforiaTrackable> allTrackables){
+    public VuforiaTrackables setUpVuforia(List<VuforiaTrackable> allTrackables) {
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         //VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
@@ -289,7 +287,7 @@ public class AutonomousNavTFod extends LinearOpMode {
         return targetsRoverRuckus;
     }
 
-    private void initTfod () {
+    private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
@@ -311,6 +309,10 @@ public class AutonomousNavTFod extends LinearOpMode {
             telemetry.addData("Sorry!", "This device is not compatible with TFOD");
         }
 
+        int turnPos = 0;
+        int tfodCounter = 0;
+        boolean triggered = false;
+        boolean trigger = false;
         /** Wait for the game to begin */
         telemetry.addData(">", "Press Play to start tracking");
         telemetry.update();
@@ -322,7 +324,6 @@ public class AutonomousNavTFod extends LinearOpMode {
         /** Start tracking the data sets we care about. */
         targetsRoverRuckus.activate();
 
-        int tfodCounter = 0;
 
         if (opModeIsActive()) {
             /** Activate Tensor Flow Object Detection. */
@@ -345,7 +346,8 @@ public class AutonomousNavTFod extends LinearOpMode {
                             picture_found = i;
                         }
                     }
-
+                    telemetry.addData("picture found", picture_found);
+                    telemetry.update();
 
                     OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
                     if (robotLocationTransform != null) {
@@ -354,8 +356,8 @@ public class AutonomousNavTFod extends LinearOpMode {
                     break;
                 }
             }
-            int turnPos = 0;
-            float turnIncrement = 24;
+
+            float turnIncrement = 37;
             float DriveInc = 30;
 
             // first detect the mineral
@@ -364,8 +366,8 @@ public class AutonomousNavTFod extends LinearOpMode {
 
             List<Recognition> filteredMinerals = minerals;    //new list of minerals detected, without ones in the background
             for (int i = 0; i < filteredMinerals.size(); i++) {
-                if ((filteredMinerals.get(i).getRight() - filteredMinerals.get(i).getLeft() < 100) || (filteredMinerals.get(i).getBottom() < 800)) { //if the size of the box is less than 100, then it's in the background so its removed
-                    filteredMinerals.remove(i);
+                if ((filteredMinerals.get(i).getRight() - filteredMinerals.get(i).getLeft() < 100) || (filteredMinerals.get(i).getBottom() < 700)) { //if the size of the box is less than 100, then it's in the background so its removed
+                    filteredMinerals.remove(i);                                                                 //orinally 800
                 }
             }
 
@@ -382,6 +384,7 @@ public class AutonomousNavTFod extends LinearOpMode {
                         if (filteredMinerals.get(0).getLabel().equals(LABEL_GOLD_MINERAL) || turnPos >= 2) {
                             moveForward(DriveInc);
                             moveForward(-DriveInc);
+                            triggered = true;
                             telemetry.addLine("Found it!");
                             telemetry.update();
                             amIDone = true;
@@ -391,7 +394,7 @@ public class AutonomousNavTFod extends LinearOpMode {
                             turnDegrees(turnIncrement);
                             telemetry.addLine("turn right");
                             telemetry.update();
-                            sleep(1000);
+                            sleep(800);
                             turnPos++;
                             telemetry.addData("turnPos: ", turnPos);
                             break;
@@ -403,6 +406,7 @@ public class AutonomousNavTFod extends LinearOpMode {
                             turnDegrees(-0.5 * turnIncrement);
                             moveForward(DriveInc);
                             moveForward(-DriveInc);
+                            triggered = true;
                             telemetry.addLine("mineral at relative left");
                             telemetry.update();
                             amIDone = true;
@@ -411,8 +415,10 @@ public class AutonomousNavTFod extends LinearOpMode {
                         if ((filteredMinerals.get(0).getLabel().equals(LABEL_GOLD_MINERAL) && filteredMinerals.get(0).getLeft() >= 200) || (filteredMinerals.get(1).getLabel().equals(LABEL_GOLD_MINERAL) && filteredMinerals.get(1).getLeft() >= 200)) { //the right mineral is gold
                             //turn towards the gold mineral seen (on the right) and drive forward
                             turnDegrees(turnIncrement * 0.5);
+
                             moveForward(DriveInc);
                             moveForward(-DriveInc);
+                            triggered = true;
                             telemetry.addLine("mineral at relative right");
                             telemetry.update();
                             amIDone = true;
@@ -423,6 +429,7 @@ public class AutonomousNavTFod extends LinearOpMode {
                             turnDegrees(turnIncrement * 1.5);
                             moveForward(DriveInc);
                             moveForward(-DriveInc);
+                            triggered = true;
                             telemetry.addLine("mineral is all the way to the right");
                             telemetry.update();
                             amIDone = true;
@@ -431,29 +438,39 @@ public class AutonomousNavTFod extends LinearOpMode {
                 }
             }
 
-            turnDegrees(35);
-
-            VectorF translation = lastLocation.getTranslation();
-            //Correcting Location
-            while(translation.get(1) <= 7)
-            {
-                moveForward(3.0);
+            if (triggered) {
+                turnDegrees(126 - (turnIncrement * turnPos));
+                moveForward(40);
+                trigger = true;
             }
-            while (( -2 >= translation.get(0)) || (translation.get(0) >= 2))
-            {
-                if(-2 >= translation.get(0))
-                {
-                    turnDegrees(3);
-                }
-                else if(translation.get(0) >= 2)
-                {
-                    turnDegrees(-3);
-                }
-            }
-/*
-            switch (picture_found) {
-                case 0:
 
+            if (picture_found != 7) {
+                /*VectorF translation = lastLocation.getTranslation();
+                while (translation.get(1) != 7) {
+                    moveForward(translation.get(1) - 7);
+                }
+                while ((-2 >= translation.get(0)) || (translation.get(0) >= 2)) {
+                    if (-2 >= translation.get(0)) {
+                        turnDegrees(3);
+                    } else if (translation.get(0) >= 2) {
+                        turnDegrees(-3);
+                    }
+
+                }
+                trigger = true;
+            }
+            telemetry.addData("TriGGer", trigger);
+            telemetry.update();
+
+            if (!trigger) {
+                telemetry.addData("OWO", 69);
+                telemetry.update();
+            }
+            if (trigger) {*/
+                telemetry.addData("UWU", 1);
+                telemetry.addData("Why are we not moving?", picture_found);
+                telemetry.update();
+                /*if(picture_found==1) {
                     turnDegrees(-79);
                     moveForward(54);
                     depositMarker();
@@ -461,7 +478,9 @@ public class AutonomousNavTFod extends LinearOpMode {
                     moveForward(-122);
                     amIDone = true;
                     break;
-                case 1: //red footprint: So we are in red alliance, crater to the right, and depot is to the left
+                }
+
+                if(picture_found==2) {
                     turnDegrees(-79);
                     moveForward(54);
                     depositMarker();
@@ -469,39 +488,62 @@ public class AutonomousNavTFod extends LinearOpMode {
                     moveForward(-122);
                     amIDone = true;
                     break;
-                case 2: // front craters: So we are in blue alliance, depot to the right, crater to the right back
-
-                    turnDegrees(88); //could be 85
-                    moveForward(40);
-                    turnDegrees(-89);//could comment this out for red crater
-                    depositMarker();
-                    moveForward(-122);
-                    amIDone = true;
-                    break;
-                case 3:// back space: So we are in red alliance, depot to the right, crater to the right back
-                    turnDegrees(88); //could be 85
-                    moveForward(40);
-                    turnDegrees(-89);//could comment this out for red crater
-                    depositMarker();
-                    moveForward(-122);
-                    amIDone = true;
-                    break;
-                default:
-                    turnDegrees(5);
-                    turnDegrees(-5);
-                    break;
+                }*/
 
 
+                switch (picture_found) {
+                    case 0:
 
+                        turnDegrees(-79);
+                        moveForward(54);
+                        depositMarker();
+                        turnDegrees(-7);
+                        moveForward(-122);
+                        amIDone = true;
+                        break;
+                    case 1: //red footprint: So we are in red alliance, crater to the right, and depot is to the left
+                        telemetry.addData("it has done it", 420);
+                        telemetry.update();
+                        turnDegrees(-79);
+                        moveForward(54);
+                        depositMarker();
+                        turnDegrees(-7);
+                        moveForward(-122);
+                        amIDone = true;
+                        break;
+                    case 2: // front craters: So we are in blue alliance, depot to the right, crater to the right back
+
+                        turnDegrees(88); //could be 85
+                        moveForward(40);
+                        turnDegrees(-89);//could comment this out for red crater
+                        depositMarker();
+                        moveForward(-122);
+                        amIDone = true;
+                        break;
+                    case 3:// back space: So we are in red alliance, depot to the right, crater to the right back
+                        turnDegrees(88); //could be 85
+                        moveForward(40);
+                        turnDegrees(-89);//could comment this out for red crater
+                        depositMarker();
+                        moveForward(-122);
+                        amIDone = true;
+                        break;
+                    default:
+                        turnDegrees(5);
+                        turnDegrees(-5);
+                        break;
+
+                }
+
+                if (tfod != null) {
+                    tfod.shutdown();
+                }
             }
-            if (tfod != null) {
-                tfod.shutdown();
-            }
-        */
+
         }
     }
-
 }
+
 
 
 
